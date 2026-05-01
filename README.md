@@ -1,42 +1,81 @@
 # 📋 TaskFlow — Team Task Manager
 
-![TaskFlow Header](https://via.placeholder.com/1200x400/1e293b/ffffff?text=TaskFlow+-+Team+Task+Manager)
+> A full-stack **MERN** application for team collaboration with role-based access control, project management, and a visual Kanban board.
 
-A full-stack MERN (MongoDB, Express, React, Node.js) application designed for seamless team collaboration. It features role-based access control, project management, and a visual Kanban board for intuitive task tracking.
+**Live Demo:** `[your-frontend-url].up.railway.app` &nbsp;|&nbsp; **Backend API:** `[your-backend-url].up.railway.app`
+
+---
 
 ## ✨ Features
 
-- 🔐 **Authentication** — Secure JWT-based signup and login system.
-- 📁 **Project Management** — Create workspaces, manage project details, and invite team members.
-- 🛡️ **Role-Based Access Control (RBAC)** — 
-  - **Admins** can create, edit, and delete tasks.
-  - **Members** can view and update the status of tasks assigned to them.
-- ✅ **Task Management** — Create comprehensive tasks, assign them to members, set priority levels (Low, Medium, High), and assign due dates.
-- 📋 **Kanban Board** — Visual drag-and-drop style task management across 4 columns: *To Do, In Progress, Review, Done*.
-- 📊 **Dashboard Analytics** — High-level overview of active projects, task statistics, and overdue items.
-- 🧑‍💻 **My Tasks** — Dedicated personal task view tailored to the logged-in user with dynamic status filters.
+| Feature | Description |
+|---|---|
+| 🔐 JWT Auth | Secure signup/login with token stored in `localStorage` |
+| 🏗 Projects | Create projects, invite members, manage team workspaces |
+| 🛡 RBAC | **Admins** manage tasks; **Members** update their own task status |
+| ✅ Task Tracking | Priority levels (`low / medium / high / critical`), due dates, assignees |
+| 📋 Kanban Board | Visual 4-column board: *To Do → In Progress → Review → Done* |
+| 📊 Dashboard | Overview of active projects, task counts, and overdue items |
+| 👤 My Tasks | Personal filtered task view for the logged-in user |
+| 🌐 Global Error Handling | 401 auto-logout, toast notifications, server error middleware |
 
 ---
 
 ## 🗂 Project Structure
 
-```text
+```
 team-task-manager/
-├── backend/                  # Node.js + Express API
-│   ├── config/               # Database configurations
-│   ├── controllers/          # API route logic (Auth, Projects, Tasks, Users)
-│   ├── middleware/           # JWT Protection and Role validation
-│   ├── models/               # Mongoose DB schemas
-│   ├── routes/               # Express API routing definitions
-│   └── server.js             # Main application entry point
+├── .gitignore                     # Excludes node_modules, .env, build/
 │
-└── frontend/                 # React UI
-    ├── public/               # Static assets
+├── backend/                       # Node.js + Express REST API
+│   ├── config/
+│   │   └── db.js                  # MongoDB Atlas connection
+│   ├── controllers/
+│   │   ├── authController.js      # register, login, getMe
+│   │   ├── projectController.js   # CRUD + member management
+│   │   ├── taskController.js      # CRUD + dashboard stats
+│   │   └── userController.js      # Search users, update profile
+│   ├── middleware/
+│   │   └── authMiddleware.js      # JWT protect + role-based guard
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Project.js             # Embedded members with roles
+│   │   └── Task.js                # isOverdue virtual field
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── projectRoutes.js
+│   │   ├── taskRoutes.js
+│   │   └── userRoutes.js
+│   ├── railway.toml               # Railway deploy config
+│   ├── package.json
+│   └── server.js                  # Entry point, CORS, routes
+│
+└── frontend/                      # React 18 SPA
+    ├── public/
     ├── src/
-    │   ├── components/       # Reusable UI components (TaskCards, Modals, Layout)
-    │   ├── context/          # React Context (Auth State)
-    │   ├── pages/            # Application views (Dashboard, Projects, Login, etc.)
-    │   └── utils/            # Axios API interceptors and helpers
+    │   ├── components/
+    │   │   ├── layout/
+    │   │   │   ├── Layout.jsx     # Sidebar + outlet wrapper
+    │   │   │   └── Layout.css
+    │   │   ├── tasks/
+    │   │   │   ├── TaskCard.jsx   # Kanban card component
+    │   │   │   └── TaskCard.css
+    │   │   ├── Modal.jsx          # Reusable modal wrapper
+    │   │   └── Modal.css
+    │   ├── context/
+    │   │   └── AuthContext.jsx    # Auth state, login/logout handlers
+    │   ├── pages/
+    │   │   ├── LoginPage.jsx
+    │   │   ├── RegisterPage.jsx
+    │   │   ├── DashboardPage.jsx
+    │   │   ├── ProjectsPage.jsx
+    │   │   ├── ProjectDetailPage.jsx  # Board + List + Members tabs
+    │   │   └── MyTasksPage.jsx
+    │   ├── utils/
+    │   │   └── api.js             # Axios instance + JWT interceptor
+    │   ├── App.jsx                # Routes (public + private guards)
+    │   └── index.js
+    ├── railway.toml               # Railway deploy config
     └── package.json
 ```
 
@@ -45,8 +84,8 @@ team-task-manager/
 ## ⚙️ Local Development Setup
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/en/) (v18 or higher)
-- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account (or a local MongoDB instance)
+- **Node.js** v18+ → [nodejs.org](https://nodejs.org)
+- **MongoDB Atlas** cluster → [mongodb.com/cloud/atlas](https://mongodb.com/cloud/atlas)
 
 ### 1. Clone the repository
 ```bash
@@ -54,88 +93,213 @@ git clone https://github.com/striger07/task.git
 cd task
 ```
 
+---
+
 ### 2. Backend Setup
+
 ```bash
 cd backend
 npm install
-
-# Environment Variables
-cp .env.example .env
-# Open the .env file and set your MONGO_URI and JWT_SECRET
-
-# Start development server
-npm run dev
 ```
 
+Create a `.env` file in the `backend/` directory:
+
+```env
+# backend/.env
+
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/taskflow?retryWrites=true&w=majority
+JWT_SECRET=your_super_secret_jwt_key_here_min_32_chars
+NODE_ENV=development
+CLIENT_URL=http://localhost:3000
+PORT=5000
+```
+
+Start the backend dev server:
+```bash
+npm run dev
+# Server running on http://localhost:5000
+```
+
+Verify it's working:
+```bash
+curl http://localhost:5000/
+# → {"message":"Team Task Manager API running"}
+```
+
+---
+
 ### 3. Frontend Setup
+
 ```bash
 cd ../frontend
 npm install
-
-# Environment Variables
-cp .env.example .env
-# Set REACT_APP_API_URL=http://localhost:5000/api
-
-# Start development server
-npm start
 ```
 
----
+Create a `.env` file in the `frontend/` directory:
 
-## 🌐 Deployment (Railway)
+```env
+# frontend/.env
 
-This project is configured out-of-the-box for deployment on [Railway.app](https://railway.app/).
+REACT_APP_API_URL=http://localhost:5000/api
+```
 
-### Prerequisites for Deployment
-- Make sure you do **NOT** commit `node_modules` to your Git repository. The project includes a root `.gitignore` to prevent this.
+Start the frontend dev server:
+```bash
+npm start
+# App running on http://localhost:3000
+```
 
-### Backend Deployment
-1. Create a new Railway project → **Add Service** → **GitHub Repo**.
-2. Navigate to Service Settings and set the **Root Directory** to `/backend`.
-3. Add the following **Environment Variables**:
-   - `MONGO_URI` = Your MongoDB Atlas connection string
-   - `JWT_SECRET` = A strong random secret string
-   - `NODE_ENV` = `production`
-   - `CLIENT_URL` = Your deployed frontend URL (for CORS)
-4. Deploy the service. It uses `railway.toml` to automatically run `node server.js`.
-
-### Frontend Deployment
-1. In the same Railway project, add another service from the same GitHub Repo.
-2. Navigate to Service Settings and set the **Root Directory** to `/frontend`.
-3. Add the following **Environment Variable**:
-   - `REACT_APP_API_URL` = Your deployed backend URL + `/api` (e.g., `https://backend-service.up.railway.app/api`)
-4. Deploy the service. It uses the frontend `railway.toml` to run `npm run build` and serves it on port 3000 using `serve`.
+> Both servers must be running simultaneously for the app to work locally.
 
 ---
 
-## 🔌 API Documentation
+## 🌐 Deployment on Railway
 
-| Method | Endpoint | Auth Required | Description |
-|--------|----------|---------------|-------------|
-| **POST** | `/api/auth/register` | No | Register a new user |
-| **POST** | `/api/auth/login` | No | Authenticate user & get token |
-| **GET** | `/api/auth/me` | Yes | Get current user profile |
-| **GET** | `/api/projects` | Yes | List user's projects |
-| **POST** | `/api/projects` | Yes | Create a new project |
-| **GET** | `/api/projects/:id` | Yes | Get project details & board |
-| **PUT** | `/api/projects/:id` | Admin | Update project details |
-| **DELETE** | `/api/projects/:id` | Owner | Delete a project |
-| **POST** | `/api/projects/:id/members`| Admin | Add a member to a project |
-| **DELETE** | `/api/projects/:id/members/:uid`| Admin | Remove a member |
-| **GET** | `/api/tasks/dashboard` | Yes | Global dashboard statistics |
-| **GET** | `/api/tasks/my` | Yes | User's assigned tasks |
-| **GET** | `/api/tasks/project/:id` | Yes | Tasks for a specific project |
-| **POST** | `/api/tasks` | Yes | Create a new task |
-| **PUT** | `/api/tasks/:id` | Yes* | Update a task (*Members can only update status) |
-| **DELETE** | `/api/tasks/:id` | Yes | Delete a task |
+### Step 0 — Prerequisites
+- Make sure **`node_modules` is NOT committed** to git. The root `.gitignore` in this repo handles this.
+- Push your latest code to GitHub before deploying.
+
+---
+
+### Backend Service
+
+1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub Repo** → select `striger07/task`.
+2. In **Service Settings → Source** → set **Root Directory** to `backend`.
+3. Go to **Variables** tab and add:
+
+   | Variable | Value |
+   |---|---|
+   | `MONGO_URI` | `mongodb+srv://...` (your Atlas URI) |
+   | `JWT_SECRET` | A strong random string (32+ chars) |
+   | `NODE_ENV` | `production` |
+   | `CLIENT_URL` | Your **frontend** Railway URL (e.g. `https://sweet-stillness.up.railway.app`) |
+
+4. Railway auto-detects `railway.toml` and runs `node server.js`. **Deploy.**
+5. Copy your backend public URL (e.g. `https://hearty-optimism.up.railway.app`).
+
+---
+
+### Frontend Service
+
+1. In the same Railway project → **New Service** → same GitHub repo.
+2. In **Service Settings → Source** → set **Root Directory** to `frontend`.
+3. Go to **Variables** tab and add:
+
+   | Variable | Value |
+   |---|---|
+   | `REACT_APP_API_URL` | `https://<your-backend-url>.up.railway.app/api` |
+
+4. Railway auto-detects `railway.toml` and runs `npm run build` then `npx serve -s build`. **Deploy.**
+
+> ⚠️ **Critical:** `REACT_APP_API_URL` must be the full backend URL + `/api`. If this is missing or points to `localhost`, the frontend will not be able to reach the backend in production.
+
+---
+
+## 🔌 API Reference
+
+All protected routes require the header: `Authorization: Bearer <token>`
+
+### Auth
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | No | Register (name, email, password≥6) |
+| `POST` | `/api/auth/login` | No | Login → returns JWT token |
+| `GET` | `/api/auth/me` | ✅ | Get current user profile |
+
+### Projects
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/projects` | ✅ | List all projects user belongs to |
+| `POST` | `/api/projects` | ✅ | Create a new project |
+| `GET` | `/api/projects/:id` | ✅ | Get project details |
+| `PUT` | `/api/projects/:id` | 🛡 Admin | Update project name/description |
+| `DELETE` | `/api/projects/:id` | 🔑 Owner | Delete project |
+| `POST` | `/api/projects/:id/members` | 🛡 Admin | Add member by email |
+| `DELETE` | `/api/projects/:id/members/:uid` | 🛡 Admin | Remove a member |
+
+### Tasks
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/tasks/dashboard` | ✅ | Dashboard stats (counts, overdue) |
+| `GET` | `/api/tasks/my` | ✅ | Tasks assigned to current user |
+| `GET` | `/api/tasks/project/:id` | ✅ | All tasks for a project |
+| `POST` | `/api/tasks` | ✅ | Create task (title + project required) |
+| `PUT` | `/api/tasks/:id` | ✅ * | Update task fields |
+| `DELETE` | `/api/tasks/:id` | ✅ | Delete task |
+
+> \* Members can only update `status` on tasks assigned to them. Admins can update all fields.
+
+### Users
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/users/search?q=<email>` | ✅ | Search users by email (for invites) |
+| `PUT` | `/api/users/profile` | ✅ | Update own profile |
 
 ---
 
 ## 🎨 Tech Stack
 
-- **Frontend**: React.js 18, React Router v6, TanStack Query, Axios, react-hot-toast, Pure CSS
-- **Backend**: Node.js, Express.js, Mongoose (MongoDB), JWT, bcryptjs, express-validator
-- **Infrastructure**: Railway (Nixpacks build system)
+### Frontend
+| Package | Version | Purpose |
+|---|---|---|
+| React | 18.2 | UI framework |
+| React Router DOM | v6 | Client-side routing |
+| TanStack Query | v5 | Server state & caching |
+| Axios | 1.x | HTTP client with interceptors |
+| react-hot-toast | 2.x | Toast notifications |
+
+### Backend
+| Package | Version | Purpose |
+|---|---|---|
+| Express | 4.x | Web framework |
+| Mongoose | 7.x | MongoDB ODM |
+| jsonwebtoken | 9.x | JWT auth |
+| bcryptjs | 2.x | Password hashing |
+| express-validator | 7.x | Input validation |
+| cors | 2.x | CORS middleware |
+| dotenv | 16.x | Environment variable loading |
+
+### Infrastructure
+- **Database:** MongoDB Atlas
+- **Deployment:** Railway (Nixpacks build)
+- **CI/CD:** Auto-deploy on push to `main`
 
 ---
-*Developed with ❤️ for efficient team management.*
+
+## 🔒 Environment Variables Reference
+
+### Backend (`backend/.env`)
+```env
+MONGO_URI=           # MongoDB Atlas connection string
+JWT_SECRET=          # Secret for signing JWTs (keep this private!)
+NODE_ENV=            # development | production
+CLIENT_URL=          # Frontend URL for CORS whitelist
+PORT=                # Optional — defaults to 5000
+```
+
+### Frontend (`frontend/.env`)
+```env
+REACT_APP_API_URL=   # Full backend API URL e.g. https://xxx.railway.app/api
+```
+
+> ⚠️ Never commit `.env` files to git. Use Railway's **Variables** dashboard for production secrets.
+
+---
+
+## 🐛 Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `npm ci` fails on Railway | Ensure `node_modules` is not tracked in git (`git ls-files \| grep node_modules`) |
+| Frontend can't reach backend | Check `REACT_APP_API_URL` is set in Railway Variables (not just `.env`) |
+| CORS error in browser | Set `CLIENT_URL` in backend Railway Variables to match your frontend URL exactly |
+| MongoDB connection refused | Whitelist `0.0.0.0/0` in MongoDB Atlas Network Access |
+| 401 on all API calls | JWT_SECRET mismatch between local and deployed environments |
+
+---
+
+*Built with ❤️ — TaskFlow helps teams stay organized and focused.*
